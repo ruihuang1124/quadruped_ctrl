@@ -18,14 +18,6 @@ VariationalBasedOptimalController::VariationalBasedOptimalController()
 
   QPFinished_ = false;
 
-//  lcm_ = new lcm::LCM("udpm://239.255.76.67:7667?ttl=1");
-//  if (lcm_->good()) {
-//    printf("LCM IN Variational Based Optimal CONTROL INITIALIZED\n");
-//  } else {
-//    printf("LCM IN BALANCE CONTROLLER FAILED\n");
-//    exit(-1);
-//  }
-
   // Eigen QP matrices
   H_eigen_.resize(VBOC_NUM_VARIABLES_QP, VBOC_NUM_VARIABLES_QP);
   A_eigen_.resize(VBOC_NUM_CONSTRAINTS_QP, VBOC_NUM_VARIABLES_QP);
@@ -198,14 +190,6 @@ void VariationalBasedOptimalController::updateContactData(double* contact_state_
   threshold_ = threshold_in;
   stance_legs_ = stance_legs_in;
 
-//  // Write to LCM
-//  for (int i = 0; i < 4; i++) {
-//    two_contact_stand_data_.contact_state[i] = contact_state_in[i];
-//    two_contact_stand_data_.minForces[i] = contact_state_in[i] * min_forces_in[i];
-//    two_contact_stand_data_.maxForces[i] = contact_state_in[i] * max_forces_in[i];
-//  }
-//  two_contact_stand_data_.stance_legs = stance_legs_;
-
   calc_lb_ub_qpOASES();
   calc_lbA_ubA_qpOASES();
 }
@@ -221,7 +205,6 @@ void VariationalBasedOptimalController::solveQP(double* xOpt) {
   }
 
   calc_constraint_check();
-//  two_contact_stand_data_publish_ = two_contact_stand_data_;
 }
 
 void VariationalBasedOptimalController::solveQP_nonThreaded(double* xOpt) {
@@ -245,9 +228,6 @@ void VariationalBasedOptimalController::solveQP_nonThreaded(double* xOpt) {
   QProblemObj_qpOASES_.getBounds(guessedBounds_);
   QProblemObj_qpOASES_.getConstraints(guessedConstraints_);
 
-//  two_contact_stand_data_.exit_flag = qp_exit_flag_;
-//  two_contact_stand_data_.nWSR = nWSR_qpOASES_;
-//  two_contact_stand_data_.cpu_time_microseconds = cpu_time_ * 1.0e6;
   copy_real_t_to_Eigen(xOpt_eigen_, xOpt_qpOASES_, 12);
 
   // Combine reference control (f_des) and linear control (xOpt_eigen) inputs
@@ -286,22 +266,6 @@ void VariationalBasedOptimalController::calc_linear_error() {
 
 void VariationalBasedOptimalController::calc_constraint_check() {
   C_times_f_opt_ = C_control_ * xOpt_eigen_;
-
-//  for (int i = 0; i < VBOC_NUM_VARIABLES_QP; i++) {
-//    two_contact_stand_data_.f_opt[i] = xOpt_eigen_(i);
-//    two_contact_stand_data_.f_control[i] = xOpt_combined(i);
-//    two_contact_stand_data_.f_unc[i] = f_unc_[i];
-//  }
-//
-//  for (int i = 0; i < 4; i++) {
-//    two_contact_stand_data_.f_ref[i] = f_ref_world_[3 * i + 2];
-//  }
-
-//  for (int i = 0; i < VBOC_NUM_CONSTRAINTS_QP; i++) {
-//    two_contact_stand_data_.lbA[i] = lbA_qpOASES_[i];
-//    two_contact_stand_data_.ubA[i] = ubA_qpOASES_[i];
-//    two_contact_stand_data_.C_times_f[i] = C_times_f_opt_(i);
-//  }
 }
 
 /* --------------- QP Matrices and Problem Data ------------ */

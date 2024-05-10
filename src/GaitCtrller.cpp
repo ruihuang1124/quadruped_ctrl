@@ -4,6 +4,7 @@ GaitCtrller::GaitCtrller(double freq, double* PIDParam)
   : _quadruped{ buildMiniCheetah<float>() }
   , _model{ _quadruped.buildModel() }
   , convexMPC{ std::make_unique<ConvexMPCLocomotion>(1.0 / freq, 13) }
+  , vbocMPC{std::make_unique<VBOCLocomotion>(1.0 / freq, 13)}
   , _legController{ std::make_unique<LegController<float>>(_quadruped) }
   , _stateEstimator{ std::make_unique<StateEstimatorContainer<float>>(
         cheaterState.get(), &_vectorNavData, _legController->datas, &_stateEstimate,
@@ -175,7 +176,7 @@ void GaitCtrller::ControlCalculator(double *imuData, double *motorData, double *
         std::cout << "broken: Joint Limit Safety Check FAIL" << std::endl;
     }
 
-    convexMPC->run(_quadruped, *_legController, *_stateEstimator,
+    vbocMPC->run(_quadruped, *_legController, *_stateEstimator,
                    *_desiredStateCommand, _gamepadCommand, _gaitType, _robotMode);
 
     optimized_state_trajectory = convexMPC->optimized_state_trajectory_;

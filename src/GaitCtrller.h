@@ -18,6 +18,7 @@
 #include "Controllers/SafetyChecker.h"
 #include "Dynamics/MiniCheetah.h"
 #include "MPC_Ctrl/ConvexMPCLocomotion.h"
+#include "MPC_Ctrl/VariationalBasedOptimalController/VBOCLocomotion.h"
 #include "Utilities/IMUTypes.h"
 #include "calculateTool.h"
 
@@ -55,6 +56,7 @@ class GaitCtrller {
   Quadruped<float> _quadruped;
   FloatingBaseModel<float> _model;
   std::unique_ptr<ConvexMPCLocomotion> convexMPC;
+  std::unique_ptr<VBOCLocomotion> vbocMPC;
   std::unique_ptr<LegController<float>> _legController;
   std::unique_ptr<StateEstimatorContainer<float>> _stateEstimator;
   LegData _legdata;

@@ -416,3 +416,92 @@ void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> 
     // END of WBC Update
 }
 
+void VBOCLocomotion::updateMPCIfNeeded(int *mpcTable, StateEstimatorContainer<float> &_stateEstimator, bool omniMode) {
+    // iterationsBetweenMPC = 30;
+    if ((iterationCounter % iterationsBetweenMPC) == 0) {
+        auto seResult = _stateEstimator.getResult();
+        float* p = seResult.position.data();
+
+        Vec3<float> v_des_robot(_x_vel_des, _y_vel_des, 0);
+        Vec3<float> v_des_world =
+                omniMode ? v_des_robot : seResult.rBody.transpose() * v_des_robot;
+        // float trajInitial[12] = {0,0,0, 0,0,.25, 0,0,0,0,0,0};
+
+        // printf("Position error: %.3f, integral %.3f\n", pxy_err[0],
+        // x_comp_integral);
+
+        if (current_gait == 4) {
+            float trajInitial[12] = {
+                    _roll_des,
+                    _pitch_des /*-hw_i->state_estimator->se_ground_pitch*/,
+                    (float)stand_traj[5] /*+(float)stateCommand->data.stateDes[11]*/,
+                    (float)stand_traj[0] /*+(float)fsm->main_control_settings.p_des[0]*/,
+                    (float)stand_traj[1] /*+(float)fsm->main_control_settings.p_des[1]*/,
+                    (float)_body_height /*fsm->main_control_settings.p_des[2]*/,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0};
+
+            for (int i = 0; i < horizonLength; i++)
+                for (int j = 0; j < 12; j++) trajAll[12 * i + j] = trajInitial[j];
+        }
+
+        else {
+            const float max_pos_error = .1;
+            float xStart = world_position_desired[0];
+            float yStart = world_position_desired[1];
+
+            if (xStart - p[0] > max_pos_error) xStart = p[0] + 0.1;
+            if (p[0] - xStart > max_pos_error) xStart = p[0] - 0.1;
+
+            if (yStart - p[1] > max_pos_error) yStart = p[1] + 0.1;
+            if (p[1] - yStart > max_pos_error) yStart = p[1] - 0.1;
+
+            world_position_desired[0] = xStart;
+            world_position_desired[1] = yStart;
+
+            float trajInitial[12] = {(float)rpy_comp[0],  // 0
+                                     (float)rpy_comp[1],  // 1
+                                     _yaw_des_true,            // 2
+                    // yawStart,    // 2
+                                     xStart,               // 3
+                                     yStart,               // 4
+                                     (float)_body_height,  // 5
+                                     0,                    // 6
+                                     0,                    // 7
+                                     _yaw_turn_rate,       // 8
+                                     v_des_world[0],       // 9
+                                     v_des_world[1],       // 10
+                                     0};                   // 11
+
+            for (int i = 0; i < horizonLength; i++) {
+                for (int j = 0; j < 12; j++) trajAll[12 * i + j] = trajInitial[j];
+
+                if (i == 0)  // start at current position  TODO consider not doing this
+                {
+                    // trajAll[2] = seResult.rpy[2];
+                    trajAll[2] = _yaw_des_true;
+                } else {
+                    trajAll[12 * i + 3] =
+                            trajAll[12 * (i - 1) + 3] + dtMPC * v_des_world[0];
+                    trajAll[12 * i + 4] =
+                            trajAll[12 * (i - 1) + 4] + dtMPC * v_des_world[1];
+                    trajAll[12 * i + 2] =
+                            trajAll[12 * (i - 1) + 2] + dtMPC * _yaw_turn_rate;
+                }
+            }
+        }
+
+        int cmpc_use_sparse = 0.0;
+
+        if (cmpc_use_sparse > 0.5) {
+            solveSparseMPC(mpcTable, _stateEstimator);
+        } else {
+            solveDenseMPC(mpcTable, _stateEstimator);
+        }
+        // printf("TOTAL SOLVE TIME: %.3f\n", solveTimer.getMs());
+    }
+}

@@ -9,9 +9,6 @@
 #include <lcm/lcm-cpp.hpp>
 #include <qpOASES/include/qpOASES.hpp>
 
-//#include "sim_command_t.hpp"
-//#include "two_contact_stand_data_t.hpp"
-
 static const int VBOC_NUM_VARIABLES_QP = 12;
 static const int VBOC_NUM_CONSTRAINTS_QP = 20;
 static const int VBOC_NUM_CONTACT_POINTS = 4;
@@ -65,10 +62,6 @@ class VariationalBasedOptimalController {
 
   // Misc
   void setBaseSupportFlag(double sflag);
-
-//  lcm::LCM* lcm_;
-//  two_contact_stand_data_t two_contact_stand_data_, two_contact_stand_data_publish_;
-  //  sim_command_t command;
 
   /* Fixed-Size qpOASES data */
   QProblem QProblemObj_qpOASES_;

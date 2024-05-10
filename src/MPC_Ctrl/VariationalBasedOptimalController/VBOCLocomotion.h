@@ -17,6 +17,8 @@ public:
     void runVBOC(Quadruped<T> &_quadruped, LegController<T> &_legController, StateEstimatorContainer<float> &_stateEstimator,
              DesiredStateCommand<T> &_desiredStateCommand, std::vector<double> gamepadCommand, int gaitType, int robotMode = 0);
 private:
+
+    void updateMPCIfNeeded(int* mpcTable, StateEstimatorContainer<float> &_stateEstimator, bool omniMode) override;
     void setVBOCSolverParameters();
     bool mix_control_command_;
 //  robot_control_command_mpc_lcmt mix_control_command_lcm_;
