@@ -507,17 +507,17 @@ void VBOCLocomotion::updateVBOCMPCIfNeeded(StateEstimatorContainer<float> &_stat
         }
 
         double rpy_des_in[3], p_des_in[3], omega_des_in[3], v_des_in[3], contact_state_in[4], min_forces_in[4], max_forces_in[4],
-                f_ref_in[12], state_x_feedback_in[13], rpy_act_in[3], p_feet_in[12], p_feet_desired_in[12];
+                 state_x_feedback_in[13], rpy_act_in[3], p_feet_in[12], p_feet_desired_in[12];
         double threshold = 0.001;
         int stance_legs_in = 4;
-        rpy_des_in[0] = _roll_des;
-        rpy_des_in[1] = _pitch_des;
-        rpy_des_in[2] = _yaw_des;
-        p_des_in[0] = world_position_desired[0];
-        p_des_in[1] = world_position_desired[1];
-        p_des_in[2] = world_position_desired[2];
+        rpy_des_in[0] = 0.0;
+        rpy_des_in[1] = 0.0;
+        rpy_des_in[2] = 0.0;
+        p_des_in[0] = 0.0;
+        p_des_in[1] = 0.0;
+        p_des_in[2] = 0.26;
 
-        Vec3<double> omega_des_world(0.0,0.0,_yaw_turn_rate);
+        Vec3<double> omega_des_world(0.0,0.0,0.0);
 
         // state_x_feedback_in = {qua_w, qua_x, qua_y, qua_z, x, y, z, roll_rate_world, pitch_rate_world, yaw_rate_world, vx, vy, vz}
         for (int i = 0; i < 3; ++i) {
@@ -529,12 +529,19 @@ void VBOCLocomotion::updateVBOCMPCIfNeeded(StateEstimatorContainer<float> &_stat
             state_x_feedback_in[10 + i] = seResult.vWorld[i];
         }
 
-        for (int i = 0; i < 12; ++i) {
-            f_ref_in[i] = 0.0;
+        if (firstRunforVBOC_){
+            for (int i = 0; i < 12; ++i) {
+                f_ref_[i] = 0.0;
+            }
+//            f_ref_[2] = 0.0;
+//            f_ref_[5] = 16.0;
+//            f_ref_[8] = 16.0;
+//            f_ref_[11] = 16.0;
+            firstRunforVBOC_ = false;
         }
 
         for (int i = 0; i < 4; ++i) {
-            contact_state_in[i] = contact_state[i];
+            contact_state_in[i] = 1;
             min_forces_in[i] = 10.0;
             max_forces_in[i] = 160.0;
             state_x_feedback_in[i] = seResult.orientation[i];  // orientation = {w, x, y, z}
@@ -547,7 +554,7 @@ void VBOCLocomotion::updateVBOCMPCIfNeeded(StateEstimatorContainer<float> &_stat
 
         vboc_update_desired_trajectory_data(rpy_des_in, p_des_in, omega_des_in, v_des_in);  //, double *vdot_des_in);
         vboc_update_contact_data(contact_state_in, min_forces_in, max_forces_in, threshold, stance_legs_in);
-        vboc_update_reference_GRF(f_ref_in);
+        vboc_update_reference_GRF(f_ref_);
         vboc_update_problem_data(state_x_feedback_in, p_feet_in, p_feet_desired_in, rpy_des_in, rpy_act_in);
         // Then invoke solver to solve the optimal control problem.
         solveVBMPC(_stateEstimator);
@@ -560,10 +567,14 @@ void VBOCLocomotion::solveVBMPC(StateEstimatorContainer<float> &_stateEstimator)
     vboc_solveQP_nonThreaded();
     double delta_f[12];
     get_vboc_solution(delta_f);
+    for (int i = 0; i < 12; ++i) {
+        f_ref_[i] = f_ref_[i] + delta_f[i];
+    }
+
     for (int leg = 0; leg < 4; leg++) {
         Vec3<float> f;
         for (int i = 0; i < 3; ++i) {
-            f[i] = delta_f[leg * 3 + i];
+            f[i] = f_ref_[leg * 3 + i];
         }
         f_ff[leg] = -seResult.rBody * f;
         //        printf("[%d F:] %7.3f %7.3f %7.3f\n", leg, f_ff[leg][0], f_ff[leg][1],f_ff[leg][2]);
