@@ -24,6 +24,8 @@ using Eigen::Dynamic;
 
 Matrix<fpt,Dynamic,13> A_qp;
 Matrix<fpt,Dynamic,Dynamic> B_qp;
+Matrix<fpt,Dynamic,1> optimized_control_input_force;
+
 Matrix<fpt,13,12> Bdt;
 Matrix<fpt,13,13> Adt;
 Matrix<fpt,25,25> ABc,expmm;
@@ -34,6 +36,8 @@ Matrix<fpt,Dynamic,Dynamic> fmat;
 
 Matrix<fpt,Dynamic,Dynamic> qH;
 Matrix<fpt,Dynamic,1> qg;
+Matrix<fpt,Dynamic,1> optimized_state_trajectory_vector;
+
 
 Matrix<fpt,Dynamic,Dynamic> eye_12h;
 
@@ -59,6 +63,14 @@ char con_elim[2000];
 mfp* get_q_soln()
 {
   return q_soln;
+}
+
+Matrix<fpt,13*14,1> get_optimized_state_trajectory_vector(){
+    return optimized_state_trajectory_vector;
+}
+
+Matrix<fpt,12*14,1> get_optimized_control_input_force_vector(){
+    return optimized_control_input_force;
 }
 
 s8 near_zero(fpt a)
@@ -135,6 +147,8 @@ void resize_qp_mats(s16 horizon)
   B_qp.resize(13*horizon, 12*horizon);
   mcount += 13*h2*12;
 
+  optimized_control_input_force.resize(12 * horizon, 1);
+
   S.resize(13*horizon, 13*horizon);
   mcount += 13*13*h2;
 
@@ -161,6 +175,7 @@ void resize_qp_mats(s16 horizon)
 
   A_qp.setZero();
   B_qp.setZero();
+  optimized_control_input_force.setZero();
   S.setZero();
   X_d.setZero();
   U_b.setZero();
@@ -619,6 +634,10 @@ void solve_mpc(update_data_t* update, problem_setup* setup)
       }
 
     }
+      for (int i = 0; i <  num_variables; ++i) {
+          optimized_control_input_force(i) = q_soln[i];
+      }
+      optimized_state_trajectory_vector = A_qp*x_0 + B_qp * optimized_control_input_force;
   }
 
 

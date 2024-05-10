@@ -26,6 +26,9 @@ from whole_body_state_msgs.msg import ContactState as WBContactState
 class StructPointer(ctypes.Structure):
     _fields_ = [("eff", ctypes.c_double * 12)]
 
+class StructPointerNew(ctypes.Structure):
+    _fields_ = [("eff", ctypes.c_double * 12), ("state_trajectory", ctypes.c_double * 12 * 14), ("control_trajectory", ctypes.c_double * 12 * 14)]
+
 
 class WalkingSimulation(object):
     def __init__(self):
@@ -76,6 +79,7 @@ class WalkingSimulation(object):
             rospy.logerr("cannot find cpp.so file")
         self.cpp_gait_ctrller = ctypes.cdll.LoadLibrary(so_file)
         self.cpp_gait_ctrller.torque_calculator.restype = ctypes.POINTER(StructPointer)
+        self.cpp_gait_ctrller.optimized_control_input_calculator.restype = ctypes.POINTER(StructPointerNew)
         rospy.loginfo("find so file = " + so_file)
 
     def __init_simulator(self):
@@ -232,14 +236,17 @@ class WalkingSimulation(object):
         self.__pub_whole_body_state(imu_data, leg_data, base_pos, contact_points)
 
         # call cpp function to calculate mpc tau
-        tau = self.cpp_gait_ctrller.torque_calculator(self.__convert_type(
+        # tau = self.cpp_gait_ctrller.torque_calculator(self.__convert_type(
+        #     imu_data), self.__convert_type(leg_data["state"]))
+
+        optimized_value = self.cpp_gait_ctrller.optimized_control_input_calculator(self.__convert_type(
             imu_data), self.__convert_type(leg_data["state"]))
 
         # set tau to simulator
         p.setJointMotorControlArray(bodyUniqueId=self.boxId,
                                     jointIndices=self.motor_id_list,
                                     controlMode=p.TORQUE_CONTROL,
-                                    forces=tau.contents.eff)
+                                    forces=optimized_value.contents.eff)
 
         p.stepSimulation()
 

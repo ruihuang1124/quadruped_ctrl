@@ -1,5 +1,8 @@
 #ifndef _convexmpc_interface
 #define _convexmpc_interface
+
+#include <eigen3/Eigen/Core>
+
 #define K_MAX_GAIT_SEGMENTS 36
 
 //#include "common_types.h"
@@ -40,6 +43,8 @@ struct update_data_t
 EXTERNC void setup_problem(double dt, int horizon, double mu, double f_max);
 EXTERNC void update_problem_data(double* p, double* v, double* q, double* w, double* r, double yaw, double* weights, double* state_trajectory, double alpha, int* gait);
 EXTERNC double get_solution(int index);
+Eigen::MatrixXd get_state_trajectory_solution();
+Eigen::MatrixXd get_control_trajectory_solution();
 EXTERNC void update_solver_settings(int max_iter, double rho, double sigma, double solver_alpha, double terminate, double use_jcqp);
 EXTERNC void update_problem_data_floats(float* p, float* v, float* q, float* w,
                                         float* r, float yaw, float* weights,

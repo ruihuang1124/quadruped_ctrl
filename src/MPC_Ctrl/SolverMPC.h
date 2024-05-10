@@ -59,4 +59,6 @@ void ct_ss_mats(Matrix<fpt,3,3> I_world, fpt m, Matrix<fpt,3,4> r_feet, Matrix<f
 void resize_qp_mats(s16 horizon);
 void c2qp(Matrix<fpt,13,13> Ac, Matrix<fpt,13,12> Bc,fpt dt,s16 horizon);
 mfp* get_q_soln();
+Matrix<fpt,13*14,1> get_optimized_state_trajectory_vector();
+Matrix<fpt,12*14,1> get_optimized_control_input_force_vector();
 #endif

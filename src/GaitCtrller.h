@@ -25,6 +25,12 @@ struct JointEff {
   double eff[12];
 };
 
+struct OptimizedControlValues {
+    double eff[12];
+    double state_trajectory[12*14];
+    double control_trajectory[12*14];
+};
+
 class GaitCtrller {
  public:
   GaitCtrller(double freq, double* PIDParam);
@@ -36,6 +42,8 @@ class GaitCtrller {
   void SetRobotMode(int mode);
   void SetRobotVel(double* vel);
   void TorqueCalculator(double* imuData, double* motorData, double* effort);
+  void ControlCalculator(double* imuData, double* motorData, double* effort, Eigen::MatrixXd &optimized_state_trajectory,
+                         Eigen::MatrixXd &optimized_control_trajectory);
 
  private:
   int _gaitType = 0;
@@ -64,6 +72,7 @@ extern "C" {
 
 GaitCtrller* gCtrller = NULL;
 JointEff jointEff;
+OptimizedControlValues optimizedCtrlValues;
 
 // first step, init the controller
 void init_controller(double freq, double PIDParam[]) {
@@ -96,6 +105,25 @@ JointEff* torque_calculator(double imuData[], double motorData[]) {
   }
   return &jointEff;
 }
+
+// after init controller and pre work, the mpc calculator can work
+OptimizedControlValues* optimized_control_input_calculator(double imuData[], double motorData[]) {
+    double eff[12] = {0.0};
+    Eigen::MatrixXd state_trajectory, control_trajectory;
+    gCtrller->ControlCalculator(imuData, motorData, eff,state_trajectory,control_trajectory);
+    for (int i = 0; i < 12; i++) {
+        optimizedCtrlValues.eff[i] = eff[i];
+    }
+    for (int step = 0; step < 14; ++step) {
+        for (int i = 0; i < 12; ++i) {
+            optimizedCtrlValues.state_trajectory[step*12 + i] = state_trajectory(step,i);
+            optimizedCtrlValues.control_trajectory[step*12 + i] = control_trajectory(step,i);
+        }
+    }
+    return &optimizedCtrlValues;
 }
+
+}
+
 
 #endif

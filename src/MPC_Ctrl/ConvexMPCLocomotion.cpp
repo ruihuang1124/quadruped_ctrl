@@ -22,7 +22,7 @@
 
 ConvexMPCLocomotion::ConvexMPCLocomotion(float _dt, int _iterations_between_mpc)
     : iterationsBetweenMPC(_iterations_between_mpc),  //控制频率用  15
-      horizonLength(14),
+      horizonLength(PLAN_HORIZON),
       dt(_dt),  // 0.002
       trotting(horizonLength, Vec4<int>(0, horizonLength/2.0, horizonLength/2.0, 0),
       Vec4<int>(horizonLength/2.0, horizonLength/2.0, horizonLength/2.0, horizonLength/2.0), "Trotting"),
@@ -60,6 +60,10 @@ ConvexMPCLocomotion::ConvexMPCLocomotion(float _dt, int _iterations_between_mpc)
   vBody_des.setZero();
   aBody_des.setZero();
   for (int i = 0; i < 4; i++) f_ff[i].setZero();
+  optimized_state_trajectory_.resize(horizonLength,12);
+  optimized_control_trajectory_.resize(horizonLength,12);
+  optimized_state_trajectory_.setZero();
+  optimized_control_trajectory_.setZero();
 }
 
 void ConvexMPCLocomotion::initialize() {
@@ -684,6 +688,11 @@ void ConvexMPCLocomotion::solveDenseMPC(
     Fr_des[leg] = f;
   }
   myflags = myflags + 1;
+  optimized_state_trajectory_ = get_state_trajectory_solution();
+  optimized_control_trajectory_ = get_control_trajectory_solution();
+//  printf("pz: %f %f %f %f test\n",optimized_state_trajectory_(0,5), optimized_state_trajectory_(1,5), optimized_state_trajectory_(2,5), optimized_state_trajectory_(3,5));
+//  printf("fz: %f %f %f %f test\n",optimized_control_trajectory_(0,5), optimized_control_trajectory_(1,5), optimized_control_trajectory_(2,5), optimized_control_trajectory_(3,5));
+
 }
 
 void ConvexMPCLocomotion::solveSparseMPC(

@@ -143,3 +143,57 @@ void GaitCtrller::TorqueCalculator(double* imuData, double* motorData,
 
   // return effort;
 }
+
+void GaitCtrller::ControlCalculator(double *imuData, double *motorData, double *effort,
+                                    Eigen::MatrixXd &optimized_state_trajectory,
+                                    Eigen::MatrixXd &optimized_control_trajectory) {
+    PreWork(imuData, motorData);
+
+    // Setup the leg controller for a new iteration
+    _legController->zeroCommand();
+    _legController->setEnabled(true);
+    _legController->setMaxTorqueCheetah3(208.5);
+
+    // Find the desired state trajectory
+    _desiredStateCommand->convertToStateCommands(_gamepadCommand);
+
+    //safety check
+    if(!safetyChecker->checkSafeOrientation(*_stateEstimator)){
+        _safetyCheck = false;
+        std::cout << "broken: Orientation Safety Check FAIL" << std::endl;
+
+    }else if (!safetyChecker->checkPDesFoot(_quadruped, *_legController)) {
+        _safetyCheck = false;
+        std::cout << "broken: Foot Position Safety Check FAIL" << std::endl;
+
+    }else if (!safetyChecker->checkForceFeedForward(*_legController)) {
+        _safetyCheck = false;
+        std::cout << "broken: Force FeedForward Safety Check FAIL" << std::endl;
+
+    }else if (!safetyChecker->checkJointLimit(*_legController)) {
+        _safetyCheck = false;
+        std::cout << "broken: Joint Limit Safety Check FAIL" << std::endl;
+    }
+
+    convexMPC->run(_quadruped, *_legController, *_stateEstimator,
+                   *_desiredStateCommand, _gamepadCommand, _gaitType, _robotMode);
+
+    optimized_state_trajectory = convexMPC->optimized_state_trajectory_;
+    optimized_control_trajectory = convexMPC->optimized_control_trajectory_;
+
+    _legController->updateCommand(&legcommand, ctrlParam);
+
+    if(_safetyCheck) {
+        for (int i = 0; i < 4; i++) {
+            effort[i * 3] = legcommand.tau_abad_ff[i];
+            effort[i * 3 + 1] = legcommand.tau_hip_ff[i];
+            effort[i * 3 + 2] = legcommand.tau_knee_ff[i];
+        }
+    } else {
+        for (int i = 0; i < 4; i++) {
+            effort[i * 3] = 0.0;
+            effort[i * 3 + 1] = 0.0;
+            effort[i * 3 + 2] = 0.0;
+        }
+    }
+}

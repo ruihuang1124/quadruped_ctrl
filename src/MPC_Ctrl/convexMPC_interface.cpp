@@ -178,3 +178,33 @@ double get_solution(int index)
   mfp* qs = get_q_soln();
   return qs[index];
 }
+
+Eigen::MatrixXd get_state_trajectory_solution(){
+    Eigen::MatrixXd state_trajectory_double;
+    state_trajectory_double.resize(14,12);
+    state_trajectory_double.setZero();
+    Matrix<fpt,13*14,1> trajectory_solved = get_optimized_state_trajectory_vector();
+    for (int step = 0; step < 14; ++step) {
+        for (int i = 0; i < 12; ++i) {
+            state_trajectory_double(step,i) = trajectory_solved(i + 13*step,0);
+        }
+    }
+//    printf("pz: %f %f %f %f test\n",state_trajectory_double(0,5), state_trajectory_double(1,5), state_trajectory_double(2,5), state_trajectory_double(3,5));
+    return state_trajectory_double;
+}
+
+
+Eigen::MatrixXd get_control_trajectory_solution(){
+    Eigen::MatrixXd control_trajectory_double;
+    control_trajectory_double.resize(14,12);
+    control_trajectory_double.setZero();
+    Matrix<fpt,12*14,1> control_solved = get_optimized_control_input_force_vector();
+    for (int step = 0; step < 14; ++step) {
+        for (int i = 0; i < 12; ++i) {
+            control_trajectory_double(step,i) = control_solved(i + 12*step,0);
+        }
+    }
+//    printf("fz: %f %f %f %f test\n",control_trajectory_double(0,2), control_trajectory_double(0,5), control_trajectory_double(0,8), control_trajectory_double(0,11));
+    return control_trajectory_double;
+}
+

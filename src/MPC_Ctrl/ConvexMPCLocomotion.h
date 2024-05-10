@@ -12,6 +12,9 @@
 #include <cstdio>
 #include <vector>
 
+#define PLAN_HORIZON 14
+#define MPC_STATE_DIM 12
+
 using Eigen::Array4f;
 using Eigen::Array4i;
 
@@ -109,6 +112,8 @@ public:
   Vec3<float> Fr_des[4];
 
   Vec4<float> contact_state;
+
+  Eigen::MatrixXd optimized_state_trajectory_, optimized_control_trajectory_;
 
 private:
   void _SetupCommand(StateEstimatorContainer<float> &_stateEstimator, std::vector<double> gamepadCommand);
