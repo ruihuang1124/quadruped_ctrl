@@ -115,64 +115,63 @@ public:
 
   Eigen::MatrixXd optimized_state_trajectory_, optimized_control_trajectory_;
 
-private:
-  void _SetupCommand(StateEstimatorContainer<float> &_stateEstimator, std::vector<double> gamepadCommand);
+protected:
+    void _SetupCommand(StateEstimatorContainer<float> &_stateEstimator, std::vector<double> gamepadCommand);
+    float _yaw_turn_rate = 0.;
+    float _yaw_des;
+    float _yaw_des_true = 0.0;
 
-  float _yaw_turn_rate = 0.;
-  float _yaw_des;
-  float _yaw_des_true = 0.0;
+    float _roll_des;
+    float _pitch_des;
 
-  float _roll_des;
-  float _pitch_des;
+    float _x_vel_des = 0.;
+    float _y_vel_des = 0.;
 
-  float _x_vel_des = 0.;
-  float _y_vel_des = 0.;
+    // High speed running
+    //float _body_height = 0.34;
+    float _body_height = 0.29;
 
-  // High speed running
-  //float _body_height = 0.34;
-  float _body_height = 0.29;
+    float _body_height_running = 0.29;
+    float _body_height_jumping = 0.36;
 
-  float _body_height_running = 0.29;
-  float _body_height_jumping = 0.36;
+    void recompute_timing(int iterations_per_mpc);
+    void updateMPCIfNeeded(int* mpcTable, StateEstimatorContainer<float> &_stateEstimator, bool omniMode);
+    void solveDenseMPC(int *mpcTable, StateEstimatorContainer<float> &_stateEstimator);
+    void solveSparseMPC(int *mpcTable, StateEstimatorContainer<float> &_stateEstimator);
+    void initSparseMPC();
+    int iterationsBetweenMPC;  //15
+    int horizonLength;    //10
+    int default_iterations_between_mpc;
+    float dt;  //0.002
+    float dtMPC; //0.03
+    int iterationCounter = 0;  //
+    Vec3<float> f_ff[4];
+    Vec4<float> swingTimes;
+    FootSwingTrajectory<float> footSwingTrajectories[4];
+    OffsetDurationGait trotting, bounding, pronking, jumping, galloping, standing, trotRunning, walking, walking2, pacing, aio;
+    // MixedFrequncyGait random, random2;
+    Mat3<float> Kp, Kd, Kp_stance, Kd_stance, Kp1;
+    bool firstRun = true;
+    bool firstSwing[4];  //true
+    float swingTimeRemaining[4];
+    float stand_traj[6];
+    int current_gait;
+    int gaitNumber;
 
-  void recompute_timing(int iterations_per_mpc);
-  void updateMPCIfNeeded(int* mpcTable, StateEstimatorContainer<float> &_stateEstimator, bool omniMode);
-  void solveDenseMPC(int *mpcTable, StateEstimatorContainer<float> &_stateEstimator);
-  void solveSparseMPC(int *mpcTable, StateEstimatorContainer<float> &_stateEstimator);
-  void initSparseMPC();
-  int iterationsBetweenMPC;  //15
-  int horizonLength;    //10
-  int default_iterations_between_mpc;
-  float dt;  //0.002
-  float dtMPC; //0.03
-  int iterationCounter = 0;  //
-  Vec3<float> f_ff[4];
-  Vec4<float> swingTimes;
-  FootSwingTrajectory<float> footSwingTrajectories[4];
-  OffsetDurationGait trotting, bounding, pronking, jumping, galloping, standing, trotRunning, walking, walking2, pacing, aio;
-  // MixedFrequncyGait random, random2;
-  Mat3<float> Kp, Kd, Kp_stance, Kd_stance, Kp1;
-  bool firstRun = true;
-  bool firstSwing[4];  //true
-  float swingTimeRemaining[4];
-  float stand_traj[6];
-  int current_gait;
-  int gaitNumber;
+    Vec3<float> world_position_desired;
+    Vec3<float> rpy_int;
+    Vec3<float> rpy_comp;
+    float x_comp_integral = 0;
+    Vec3<float> pFoot[4];
+    CMPC_Result<float> result;
+    float trajAll[20*36];
+    float myflags = 0;
 
-  Vec3<float> world_position_desired;
-  Vec3<float> rpy_int;
-  Vec3<float> rpy_comp;
-  float x_comp_integral = 0;
-  Vec3<float> pFoot[4];
-  CMPC_Result<float> result;
-  float trajAll[20*36];
-  float myflags = 0;
+    CMPC_Jump jump_state;
 
-  CMPC_Jump jump_state;
+    vectorAligned<Vec12<double>> _sparseTrajectory;
 
-  vectorAligned<Vec12<double>> _sparseTrajectory;
-
-  SparseCMPC _sparseCMPC;
+    SparseCMPC _sparseCMPC;
 
 };
 
