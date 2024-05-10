@@ -135,7 +135,7 @@ protected:
     float _body_height_jumping = 0.36;
 
     void recompute_timing(int iterations_per_mpc);
-    virtual void updateMPCIfNeeded(int* mpcTable, StateEstimatorContainer<float> &_stateEstimator, bool omniMode);
+    void updateMPCIfNeeded(int* mpcTable, StateEstimatorContainer<float> &_stateEstimator, bool omniMode);
     void solveDenseMPC(int *mpcTable, StateEstimatorContainer<float> &_stateEstimator);
     void solveSparseMPC(int *mpcTable, StateEstimatorContainer<float> &_stateEstimator);
     void initSparseMPC();

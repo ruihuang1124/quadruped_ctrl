@@ -176,7 +176,7 @@ void GaitCtrller::ControlCalculator(double *imuData, double *motorData, double *
         std::cout << "broken: Joint Limit Safety Check FAIL" << std::endl;
     }
 
-    vbocMPC->run(_quadruped, *_legController, *_stateEstimator,
+    vbocMPC->runVBOC(_quadruped, *_legController, *_stateEstimator,
                    *_desiredStateCommand, _gamepadCommand, _gaitType, _robotMode);
 
     optimized_state_trajectory = convexMPC->optimized_state_trajectory_;

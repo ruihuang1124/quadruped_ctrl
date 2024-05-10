@@ -18,8 +18,9 @@ public:
              DesiredStateCommand<T> &_desiredStateCommand, std::vector<double> gamepadCommand, int gaitType, int robotMode = 0);
 private:
 
-    void updateMPCIfNeeded(int* mpcTable, StateEstimatorContainer<float> &_stateEstimator, bool omniMode) override;
+    void updateVBOCMPCIfNeeded(StateEstimatorContainer<float> &_stateEstimator, bool omniMode);
     void setVBOCSolverParameters();
+    void solveVBMPC(StateEstimatorContainer<float> &_stateEstimator);
     bool mix_control_command_;
 //  robot_control_command_mpc_lcmt mix_control_command_lcm_;
 

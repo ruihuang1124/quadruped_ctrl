@@ -4,39 +4,40 @@
 #include "VBOCLocomotion.h"
 
 
-VBOCLocomotion::VBOCLocomotion(float _dt, int _iterations_between_mpc) : ConvexMPCLocomotion(_dt, _iterations_between_mpc){
+VBOCLocomotion::VBOCLocomotion(float _dt, int _iterations_between_mpc) : ConvexMPCLocomotion(_dt,
+                                                                                             _iterations_between_mpc) {
     vboc_init();
     setVBOCSolverParameters();
 }
 
 void VBOCLocomotion::setVBOCSolverParameters() {
-  x_weight_in_[0] = 20;
-  x_weight_in_[1] = 20;
-  x_weight_in_[2] = 1000;
-  xdot_weights_in_[0] = 1;
-  xdot_weights_in_[1] = 1;
-  xdot_weights_in_[2] = 10;
-  R_weights_in_[0] = 1100;
-  R_weights_in_[1] = 1600;
-  R_weights_in_[2] = 500;
-  omega_weights_in_[0] = 10;
-  omega_weights_in_[1] = 5;
-  omega_weights_in_[2] = 1;
-  alpha_control_in_ = 1.25;
-  beta_control_in_ = 2.25;
-  mu_in_ = 1.0;
-  min_force_ = 10.0;
-  max_force_ = 160.0;
+    x_weight_in_[0] = 20;
+    x_weight_in_[1] = 20;
+    x_weight_in_[2] = 1000;
+    xdot_weights_in_[0] = 1;
+    xdot_weights_in_[1] = 1;
+    xdot_weights_in_[2] = 10;
+    R_weights_in_[0] = 1100;
+    R_weights_in_[1] = 1600;
+    R_weights_in_[2] = 500;
+    omega_weights_in_[0] = 10;
+    omega_weights_in_[1] = 5;
+    omega_weights_in_[2] = 1;
+    alpha_control_in_ = 1.25;
+    beta_control_in_ = 2.25;
+    mu_in_ = 1.0;
+    min_force_ = 10.0;
+    max_force_ = 160.0;
 
     mass_in_ = 3.3;
     Ixx_ = 0.011253;
     Iyy_ = 0.036203;
     Izz_ = 0.042673;
-  set_all_vboc_solver_parameters(x_weight_in_, xdot_weights_in_, R_weights_in_, omega_weights_in_, alpha_control_in_,
-                                 beta_control_in_, mu_in_, mass_in_, Ixx_, Iyy_, Izz_, min_force_, max_force_);
+    set_all_vboc_solver_parameters(x_weight_in_, xdot_weights_in_, R_weights_in_, omega_weights_in_, alpha_control_in_,
+                                   beta_control_in_, mu_in_, mass_in_, Ixx_, Iyy_, Izz_, min_force_, max_force_);
 }
 
-template <>
+template<>
 void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> &_legController,
                              StateEstimatorContainer<float> &_stateEstimator,
                              DesiredStateCommand<float> & /*_desiredStateCommand*/, std::vector<double> gamepadCommand,
@@ -52,7 +53,7 @@ void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> 
         omniMode = true;
     }
 
-    auto& seResult = _stateEstimator.getResult();  //状态估计器
+    auto &seResult = _stateEstimator.getResult();  //状态估计器
 
     // Check if transition to standing 检查是否过渡到站立
     if (((gaitNumber == 4) && current_gait != 4) || firstRun) {
@@ -67,8 +68,8 @@ void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> 
     }
 
     // pick gait
-    Gait* gait = &trotting;
-    if(robotMode == 0) {
+    Gait *gait = &trotting;
+    if (robotMode == 0) {
         if (gaitNumber == 1)
             gait = &bounding;
         else if (gaitNumber == 2)
@@ -91,57 +92,59 @@ void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> 
             gait = &walking;
         else if (gaitNumber == 11)
             gait = &walking2;
-    } else if(robotMode == 1) {
+    } else if (robotMode == 1) {
         int h = 10;
-        double vBody = sqrt(_x_vel_des*_x_vel_des)+(_y_vel_des*_y_vel_des);
+        double vBody = sqrt(_x_vel_des * _x_vel_des) + (_y_vel_des * _y_vel_des);
         gait = &aio;
         gaitNumber = 9;  // Trotting
-        if(gait->getCurrentGaitPhase() == 0) {
-            if(vBody < 0.002) {
-                if(abs(_yaw_turn_rate) < 0.01) {
+        if (gait->getCurrentGaitPhase() == 0) {
+            if (vBody < 0.002) {
+                if (abs(_yaw_turn_rate) < 0.01) {
                     gaitNumber = 4;  // Standing
-                    if(gait->getGaitHorizon() != h) {
+                    if (gait->getGaitHorizon() != h) {
                         iterationCounter = 0;
                     }
                     gait->setGaitParam(h, Vec4<int>(0, 0, 0, 0), Vec4<int>(h, h, h, h), "Standing");
                 } else {
                     h = 10;
-                    if(gait->getGaitHorizon() != h) {
+                    if (gait->getGaitHorizon() != h) {
                         iterationCounter = 0;
                     }
                     gait->setGaitParam(h, Vec4<int>(0, h / 2, h / 2, 0),
                                        Vec4<int>(h / 2, h / 2, h / 2, h / 2), "trotting");
                 }
             } else {
-                if(vBody <= 0.2) {
+                if (vBody <= 0.2) {
                     h = 16;
-                    if(gait->getGaitHorizon() != h) {
+                    if (gait->getGaitHorizon() != h) {
                         iterationCounter = 0;
                     }
                     gait->setGaitParam(h,
                                        Vec4<int>(0, 1 * h / 2, 1 * h / 4, 3 * h / 4),
                                        Vec4<int>(3 * h / 4, 3 * h / 4, 3 * h / 4, 3 * h / 4), "Walking");
-                } else if(vBody > 0.2 && vBody <= 0.4) {
+                } else if (vBody > 0.2 && vBody <= 0.4) {
                     h = 16;
-                    if(gait->getGaitHorizon() != h) {
+                    if (gait->getGaitHorizon() != h) {
                         iterationCounter = 0;
                     }
                     gait->setGaitParam(h,
-                                       Vec4<int>(0, 1 * h / 2, h*((5.0/4.0)*vBody), h*((5.0/4.0)*vBody+(1.0/2.0))),
-                                       Vec4<int>(h*((-5.0/4.0)*vBody+1.0), h*((-5.0/4.0)*vBody+1.0),
-                                                 h*((-5.0/4.0)*vBody+1.0), h*((-5.0/4.0)*vBody+1.0)), "Walking2trotting");
-                } else if(vBody > 0.4 && vBody <= 1.4) {
+                                       Vec4<int>(0, 1 * h / 2, h * ((5.0 / 4.0) * vBody),
+                                                 h * ((5.0 / 4.0) * vBody + (1.0 / 2.0))),
+                                       Vec4<int>(h * ((-5.0 / 4.0) * vBody + 1.0), h * ((-5.0 / 4.0) * vBody + 1.0),
+                                                 h * ((-5.0 / 4.0) * vBody + 1.0), h * ((-5.0 / 4.0) * vBody + 1.0)),
+                                       "Walking2trotting");
+                } else if (vBody > 0.4 && vBody <= 1.4) {
                     h = 14;
-                    if(gait->getGaitHorizon() != h) {
+                    if (gait->getGaitHorizon() != h) {
                         iterationCounter = 0;
                     }
                     gait->setGaitParam(h, Vec4<int>(0, h / 2, h / 2, 0),
                                        Vec4<int>(h / 2, h / 2, h / 2, h / 2), "trotting");
                 } else {
                     // h = 10;
-                    h = -20.0*vBody+42.0;
-                    if(h < 10) h = 10;
-                    if(gait->getGaitHorizon() != h) {
+                    h = -20.0 * vBody + 42.0;
+                    if (h < 10) h = 10;
+                    if (gait->getGaitHorizon() != h) {
                         iterationCounter = 0;
                     }
                     gait->setGaitParam(h, Vec4<int>(0, h / 2, h / 2, 0),
@@ -191,7 +194,6 @@ void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> 
         pFoot[i] = seResult.position +
                    seResult.rBody.transpose() *
                    (_quadruped.getHipLocation(i) + _legController.datas[i].p);
-        // pFoot[i] = _legController.datas[i].p;
     }
 
     Vec3<float> error;
@@ -211,6 +213,9 @@ void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> 
             footSwingTrajectories[i].setHeight(0.06);
             footSwingTrajectories[i].setInitialPosition(pFoot[i]);  // set p0
             footSwingTrajectories[i].setFinalPosition(pFoot[i]);    // set pf
+            pFoot_des[i] = seResult.position +
+                       seResult.rBody.transpose() *
+                       (_quadruped.getHipLocation(i) + _legController.datas[i].p);
         }
         firstRun = false;
     }
@@ -303,9 +308,15 @@ void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> 
     Kd_stance = 1.0 * Kd;
     // gait
     Vec4<float> contactStates = gait->getContactState();
+    contact_state = gait->getContactState();
     Vec4<float> swingStates = gait->getSwingState();
-    int* mpcTable = gait->getMpcTable();
-    updateMPCIfNeeded(mpcTable, _stateEstimator, omniMode);
+    int *mpcTable = gait->getMpcTable();
+    double use_vboc = 2.0;
+    if (use_vboc > 1){
+        updateVBOCMPCIfNeeded(_stateEstimator,omniMode);
+    } else{
+        updateMPCIfNeeded(mpcTable, _stateEstimator, omniMode);
+    }
 
     //  StateEstimator* se = hw_i->state_estimator;
     Vec4<float> se_contactState(0, 0, 0, 0);
@@ -349,8 +360,8 @@ void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> 
                     _legController.commands[foot].kpCartesian = Kp;
                     _legController.commands[foot].kdCartesian = Kd;
                 } else {
-                    _legController.commands[foot].kpCartesian = 1*Kp;
-                    _legController.commands[foot].kdCartesian = 1*Kd;
+                    _legController.commands[foot].kpCartesian = 1 * Kp;
+                    _legController.commands[foot].kdCartesian = 1 * Kd;
                 }
             }
         } else  // foot is in stance
@@ -371,7 +382,7 @@ void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> 
                 if (foot == 1 || foot == 3) {
                     _legController.commands[foot].kdCartesian = Kd_stance;
                 } else {
-                    _legController.commands[foot].kdCartesian = 1*Kd_stance;
+                    _legController.commands[foot].kdCartesian = 1 * Kd_stance;
                 }
 
                 _legController.commands[foot].forceFeedForward = f_ff[foot];
@@ -416,7 +427,7 @@ void VBOCLocomotion::runVBOC(Quadruped<float> &_quadruped, LegController<float> 
     // END of WBC Update
 }
 
-void VBOCLocomotion::updateMPCIfNeeded(int *mpcTable, StateEstimatorContainer<float> &_stateEstimator, bool omniMode) {
+void VBOCLocomotion::updateVBOCMPCIfNeeded(StateEstimatorContainer<float> &_stateEstimator, bool omniMode) {
     // iterationsBetweenMPC = 30;
     if ((iterationCounter % iterationsBetweenMPC) == 0) {
         auto seResult = _stateEstimator.getResult();
@@ -495,13 +506,68 @@ void VBOCLocomotion::updateMPCIfNeeded(int *mpcTable, StateEstimatorContainer<fl
             }
         }
 
-        int cmpc_use_sparse = 0.0;
+        double rpy_des_in[3], p_des_in[3], omega_des_in[3], v_des_in[3], contact_state_in[4], min_forces_in[4], max_forces_in[4],
+                f_ref_in[12], state_x_feedback_in[13], rpy_act_in[3], p_feet_in[12], p_feet_desired_in[12];
+        double threshold = 0.001;
+        int stance_legs_in = 4;
+        rpy_des_in[0] = _roll_des;
+        rpy_des_in[1] = _pitch_des;
+        rpy_des_in[2] = _yaw_des;
+        p_des_in[0] = world_position_desired[0];
+        p_des_in[1] = world_position_desired[1];
+        p_des_in[2] = world_position_desired[2];
 
-        if (cmpc_use_sparse > 0.5) {
-            solveSparseMPC(mpcTable, _stateEstimator);
-        } else {
-            solveDenseMPC(mpcTable, _stateEstimator);
+        Vec3<double> omega_des_world(0.0,0.0,_yaw_turn_rate);
+
+        // state_x_feedback_in = {qua_w, qua_x, qua_y, qua_z, x, y, z, roll_rate_world, pitch_rate_world, yaw_rate_world, vx, vy, vz}
+        for (int i = 0; i < 3; ++i) {
+            v_des_in[i] = v_des_world[i];
+            omega_des_in[i] = omega_des_world[i];
+            rpy_act_in[i] = seResult.rpy[i];
+            state_x_feedback_in[4 + i] = seResult.position[i];
+            state_x_feedback_in[7 + i] = seResult.omegaWorld[i];
+            state_x_feedback_in[10 + i] = seResult.vWorld[i];
         }
+
+        for (int i = 0; i < 12; ++i) {
+            f_ref_in[i] = 0.0;
+        }
+
+        for (int i = 0; i < 4; ++i) {
+            contact_state_in[i] = contact_state[i];
+            min_forces_in[i] = 10.0;
+            max_forces_in[i] = 160.0;
+            state_x_feedback_in[i] = seResult.orientation[i];  // orientation = {w, x, y, z}
+            for (int j = 0; j < 3; ++j) {
+                p_feet_in[i * 3 + j] = pFoot[i][j];
+                p_feet_desired_in[i * 3 + j] = pFoot_des[i][j];  // update pFoot_des correctly.
+            }
+        }
+        // TODO the actual physical meaning of contact_state \in [0,1], also the threshold and stance_legs_in.
+
+        vboc_update_desired_trajectory_data(rpy_des_in, p_des_in, omega_des_in, v_des_in);  //, double *vdot_des_in);
+        vboc_update_contact_data(contact_state_in, min_forces_in, max_forces_in, threshold, stance_legs_in);
+        vboc_update_reference_GRF(f_ref_in);
+        vboc_update_problem_data(state_x_feedback_in, p_feet_in, p_feet_desired_in, rpy_des_in, rpy_act_in);
+        // Then invoke solver to solve the optimal control problem.
+        solveVBMPC(_stateEstimator);
         // printf("TOTAL SOLVE TIME: %.3f\n", solveTimer.getMs());
+    }
+}
+
+void VBOCLocomotion::solveVBMPC(StateEstimatorContainer<float> &_stateEstimator) {
+    auto seResult = _stateEstimator.getResult();
+    vboc_solveQP_nonThreaded();
+    double delta_f[12];
+    get_vboc_solution(delta_f);
+    for (int leg = 0; leg < 4; leg++) {
+        Vec3<float> f;
+        for (int i = 0; i < 3; ++i) {
+            f[i] = delta_f[leg * 3 + i];
+        }
+        f_ff[leg] = -seResult.rBody * f;
+        //        printf("[%d F:] %7.3f %7.3f %7.3f\n", leg, f_ff[leg][0], f_ff[leg][1],f_ff[leg][2]);
+        // Update for WBC
+        Fr_des[leg] = f;
     }
 }
