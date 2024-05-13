@@ -510,12 +510,12 @@ void VBOCLocomotion::updateVBOCMPCIfNeeded(StateEstimatorContainer<float> &_stat
                  state_x_feedback_in[13], rpy_act_in[3], p_feet_in[12], p_feet_desired_in[12];
         double threshold = 0.001;
         int stance_legs_in = 4;
-        rpy_des_in[0] = 0.0;
-        rpy_des_in[1] = 0.0;
-        rpy_des_in[2] = 0.0;
-        p_des_in[0] = 0.0;
-        p_des_in[1] = 0.0;
-        p_des_in[2] = 0.26;
+        rpy_des_in[0] = _roll_des;
+        rpy_des_in[1] = _pitch_des;
+        rpy_des_in[2] = _yaw_des;
+        p_des_in[0] = world_position_desired[0];
+        p_des_in[1] = world_position_desired[1];
+        p_des_in[2] = _body_height;
 
         Vec3<double> omega_des_world(0.0,0.0,0.0);
 
@@ -533,16 +533,16 @@ void VBOCLocomotion::updateVBOCMPCIfNeeded(StateEstimatorContainer<float> &_stat
             for (int i = 0; i < 12; ++i) {
                 f_ref_[i] = 0.0;
             }
-//            f_ref_[2] = 0.0;
-//            f_ref_[5] = 16.0;
-//            f_ref_[8] = 16.0;
-//            f_ref_[11] = 16.0;
-            firstRunforVBOC_ = false;
+            f_ref_[2] = 19.0;
+            f_ref_[5] = 19.0;
+            f_ref_[8] = 19.0;
+            f_ref_[11] = 19.0;
+//            firstRunforVBOC_ = false;
         }
 
         for (int i = 0; i < 4; ++i) {
             contact_state_in[i] = 1;
-            min_forces_in[i] = 10.0;
+            min_forces_in[i] = 0.0;
             max_forces_in[i] = 160.0;
             state_x_feedback_in[i] = seResult.orientation[i];  // orientation = {w, x, y, z}
             for (int j = 0; j < 3; ++j) {
@@ -565,20 +565,24 @@ void VBOCLocomotion::updateVBOCMPCIfNeeded(StateEstimatorContainer<float> &_stat
 void VBOCLocomotion::solveVBMPC(StateEstimatorContainer<float> &_stateEstimator) {
     auto seResult = _stateEstimator.getResult();
     vboc_solveQP_nonThreaded();
-    double delta_f[12];
-    get_vboc_solution(delta_f);
-    for (int i = 0; i < 12; ++i) {
-        f_ref_[i] = f_ref_[i] + delta_f[i];
-    }
+    double final_combined_force_robot_to_earth_robot_frame[12];
+    get_vboc_solution(final_combined_force_robot_to_earth_robot_frame);
 
     for (int leg = 0; leg < 4; leg++) {
-        Vec3<float> f;
+//        Vec3<float> f;
         for (int i = 0; i < 3; ++i) {
-            f[i] = f_ref_[leg * 3 + i];
+            f_ff[leg][i] = final_combined_force_robot_to_earth_robot_frame[leg * 3 + i];
         }
-        f_ff[leg] = -seResult.rBody * f;
+        f_ff_world_to_robot_ref[leg] = -seResult.rBody.transpose() * f_ff[leg];
+//        f_ff[leg] = f;
         //        printf("[%d F:] %7.3f %7.3f %7.3f\n", leg, f_ff[leg][0], f_ff[leg][1],f_ff[leg][2]);
         // Update for WBC
-        Fr_des[leg] = f;
+        Fr_des[leg] = f_ff_world_to_robot_ref[leg];
     }
+
+//    for (int leg = 0; leg < 4; ++leg) {
+//        for (int i = 0; i < 3; ++i) {
+//            f_ref_[leg*3 + i] = f_ff_world_to_robot_ref[leg][i];
+//        }
+//    }
 }

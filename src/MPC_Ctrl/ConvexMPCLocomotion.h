@@ -146,6 +146,7 @@ protected:
     float dtMPC; //0.03
     int iterationCounter = 0;  //
     Vec3<float> f_ff[4];
+    Vec3<float> f_ff_world_to_robot_ref[4];
     Vec4<float> swingTimes;
     FootSwingTrajectory<float> footSwingTrajectories[4];
     OffsetDurationGait trotting, bounding, pronking, jumping, galloping, standing, trotRunning, walking, walking2, pacing, aio;

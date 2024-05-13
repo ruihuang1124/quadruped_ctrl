@@ -60,6 +60,7 @@ ConvexMPCLocomotion::ConvexMPCLocomotion(float _dt, int _iterations_between_mpc)
   vBody_des.setZero();
   aBody_des.setZero();
   for (int i = 0; i < 4; i++) f_ff[i].setZero();
+  for (int i = 0; i < 4; i++) f_ff_world_to_robot_ref[i].setZero();
   optimized_state_trajectory_.resize(horizonLength,12);
   optimized_control_trajectory_.resize(horizonLength,12);
   optimized_state_trajectory_.setZero();

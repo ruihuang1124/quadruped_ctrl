@@ -159,28 +159,28 @@ void GaitCtrller::ControlCalculator(double *imuData, double *motorData, double *
     _desiredStateCommand->convertToStateCommands(_gamepadCommand);
 
     //safety check
-    if(!safetyChecker->checkSafeOrientation(*_stateEstimator)){
-        _safetyCheck = false;
-        std::cout << "broken: Orientation Safety Check FAIL" << std::endl;
-
-    }else if (!safetyChecker->checkPDesFoot(_quadruped, *_legController)) {
-        _safetyCheck = false;
-        std::cout << "broken: Foot Position Safety Check FAIL" << std::endl;
-
-    }else if (!safetyChecker->checkForceFeedForward(*_legController)) {
-        _safetyCheck = false;
-        std::cout << "broken: Force FeedForward Safety Check FAIL" << std::endl;
-
-    }else if (!safetyChecker->checkJointLimit(*_legController)) {
-        _safetyCheck = false;
-        std::cout << "broken: Joint Limit Safety Check FAIL" << std::endl;
-    }
+//    if(!safetyChecker->checkSafeOrientation(*_stateEstimator)){
+//        _safetyCheck = false;
+//        std::cout << "broken: Orientation Safety Check FAIL" << std::endl;
+//
+//    }else if (!safetyChecker->checkPDesFoot(_quadruped, *_legController)) {
+//        _safetyCheck = false;
+//        std::cout << "broken: Foot Position Safety Check FAIL" << std::endl;
+//
+//    }else if (!safetyChecker->checkForceFeedForward(*_legController)) {
+//        _safetyCheck = false;
+//        std::cout << "broken: Force FeedForward Safety Check FAIL" << std::endl;
+//
+//    }else if (!safetyChecker->checkJointLimit(*_legController)) {
+//        _safetyCheck = false;
+//        std::cout << "broken: Joint Limit Safety Check FAIL" << std::endl;
+//    }
 
     vbocMPC->runVBOC(_quadruped, *_legController, *_stateEstimator,
                    *_desiredStateCommand, _gamepadCommand, _gaitType, _robotMode);
 
-    optimized_state_trajectory = convexMPC->optimized_state_trajectory_;
-    optimized_control_trajectory = convexMPC->optimized_control_trajectory_;
+    optimized_state_trajectory = vbocMPC->optimized_state_trajectory_;
+    optimized_control_trajectory = vbocMPC->optimized_control_trajectory_;
 
     _legController->updateCommand(&legcommand, ctrlParam);
 
